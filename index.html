@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Zangori Ekran - Mini App</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            background: #0f0f0f; 
+            color: #fff; 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            min-height: 100vh;
+        }
+        .container { padding: 16px; max-width: 600px; margin: 0 auto; }
+        
+        .header {
+            text-align: center;
+            padding: 20px 0;
+            border-bottom: 1px solid #333;
+            margin-bottom: 20px;
+        }
+        .header h1 { font-size: 24px; background: linear-gradient(90deg, #667eea, #764ba2); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .header p { color: #888; font-size: 13px; margin-top: 4px; }
+        
+        .user-card {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            border-radius: 16px;
+            padding: 20px;
+            border: 1px solid #333;
+            margin-bottom: 16px;
+        }
+        .user-header {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 16px;
+        }
+        .avatar {
+            width: 56px; height: 56px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 22px; font-weight: bold;
+        }
+        .user-meta h2 { font-size: 18px; font-weight: 600; }
+        .user-meta p { font-size: 13px; color: #888; margin-top: 2px; }
+        
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: 8px;
+        }
+        .badge.success { background: #22c55e22; color: #22c55e; border: 1px solid #22c55e44; }
+        .badge.error { background: #ef444422; color: #ef4444; border: 1px solid #ef444444; }
+        
+        .data-grid {
+            display: grid;
+            gap: 12px;
+        }
+        .data-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background: #0f0f0f;
+            border-radius: 10px;
+            border: 1px solid #222;
+        }
+        .data-item .label { color: #888; font-size: 13px; }
+        .data-item .value { 
+            font-family: 'Courier New', monospace; 
+            font-size: 13px; 
+            color: #22c55e;
+            font-weight: 600;
+        }
+        .value.id { color: #f59e0b; font-size: 14px; }
+        
+        .section-title {
+            font-size: 11px;
+            text-transform: uppercase;
+            color: #666;
+            letter-spacing: 1px;
+            margin: 20px 0 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .terminal {
+            background: #050505;
+            border-radius: 12px;
+            padding: 16px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            line-height: 1.6;
+            color: #22c55e;
+            border: 1px solid #222;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        .terminal .cmd { color: #3b82f6; }
+        .terminal .info { color: #888; }
+        .terminal .success { color: #22c55e; font-weight: bold; }
+        .terminal .error { color: #ef4444; }
+        .terminal .highlight { color: #f59e0b; }
+        
+        .actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 16px;
+        }
+        .btn {
+            flex: 1;
+            padding: 14px;
+            border: none;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #0088cc, #00a8e8);
+            color: white;
+        }
+        .btn-primary:active { transform: scale(0.98); }
+        .btn-secondary {
+            background: #222;
+            color: #fff;
+            border: 1px solid #333;
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #444;
+            font-size: 12px;
+            margin-top: 20px;
+        }
+        
+        /* Animatsiya */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-in { animation: fadeIn 0.5s ease-out; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎬 Zangori Ekran</h1>
+            <p>Mini App - User Data Test</p>
+        </div>
+
+        <!-- User Card -->
+        <div class="user-card animate-in" id="userCard" style="display: none;">
+            <div class="user-header">
+                <div class="avatar" id="userAvatar">?</div>
+                <div class="user-meta">
+                    <h2 id="userName">Yuklanmoqda...</h2>
+                    <p id="userHandle">@username</p>
+                    <span class="badge" id="subBadge">Tekshirilmoqda</span>
+                </div>
+            </div>
+            
+            <div class="section-title">📊 Telegram Ma'lumotlari</div>
+            <div class="data-grid">
+                <div class="data-item">
+                    <span class="label">🆔 Chat ID / User ID</span>
+                    <span class="value id" id="chatId">...</span>
+                </div>
+                <div class="data-item">
+                    <span class="label">👤 Username</span>
+                    <span class="value" id="username">...</span>
+                </div>
+                <div class="data-item">
+                    <span class="label">📝 First Name</span>
+                    <span class="value" id="firstName">...</span>
+                </div>
+                <div class="data-item">
+                    <span class="label">📝 Last Name</span>
+                    <span class="value" id="lastName">...</span>
+                </div>
+                <div class="data-item">
+                    <span class="label">🌐 Language</span>
+                    <span class="value" id="language">...</span>
+                </div>
+                <div class="data-item">
+                    <span class="label">⭐ Premium</span>
+                    <span class="value" id="isPremium">...</span>
+                </div>
+                <div class="data-item">
+                    <span class="label">🔑 Query ID</span>
+                    <span class="value" id="queryId" style="font-size: 10px;">...</span>
+                </div>
+            </div>
+
+            <div class="actions">
+                <button class="btn btn-primary" onclick="sendToBot()">
+                    📤 Botga Yuborish
+                </button>
+                <button class="btn btn-secondary" onclick="copyAll()">
+                    📋 Nusxa Olish
+                </button>
+            </div>
+        </div>
+
+        <!-- Loading State -->
+        <div class="user-card" id="loadingCard" style="text-align: center; padding: 40px;">
+            <div style="font-size: 40px; margin-bottom: 16px;">⏳</div>
+            <h3>Telegram ma'lumotlari yuklanmoqda...</h3>
+            <p style="color: #666; margin-top: 8px;">Iltimos, kuting</p>
+        </div>
+
+        <!-- Terminal -->
+        <div class="section-title">🖥️ Terminal (Console Output)</div>
+        <div class="terminal" id="terminal">
+<span class="cmd">$</span> <span class="info">miniapp --init</span>
+<span class="success">[OK]</span> Mini App ishga tushdi...
+<span class="info">[INFO]</span> Telegram WebApp kutilyapti...
+        </div>
+
+        <div class="footer">
+            Zangori Ekran © 2026<br>
+            <span style="color: #333;">Mini App v1.0</span>
+        </div>
+    </div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        const terminal = document.getElementById('terminal');
+        let userData = {};
+
+        function log(msg, type = 'info') {
+            const time = new Date().toLocaleTimeString('uz-UZ', { hour12: false });
+            const colors = {
+                info: 'info',
+                success: 'success',
+                error: 'error',
+                cmd: 'cmd',
+                highlight: 'highlight'
+            };
+            const color = colors[type] || 'info';
+            terminal.innerHTML += `\n<span class="${color}">[${time}] ${msg}</span>`;
+            terminal.scrollTop = terminal.scrollHeight;
+            console.log(`[${time}] ${msg}`);
+        }
+
+        function init() {
+            tg.ready();
+            tg.expand();
+            tg.setHeaderColor('#0f0f0f');
+            tg.setBackgroundColor('#0f0f0f');
+
+            log('WebApp.ready() chaqirildi', 'success');
+            log(`Platform: ${tg.platform}`, 'cmd');
+            log(`Version: ${tg.version}`, 'cmd');
+
+            const initData = tg.initData;
+            const initDataUnsafe = tg.initDataUnsafe;
+
+            log(`initData length: ${initData?.length || 0}`, 'cmd');
+            log(`initDataUnsafe keys: ${Object.keys(initDataUnsafe).join(', ')}`, 'cmd');
+
+            if (initDataUnsafe.user) {
+                const u = initDataUnsafe.user;
+                userData = {
+                    id: u.id,
+                    chat_id: u.id, // Shaxsiy chatda bir xil!
+                    username: u.username || null,
+                    first_name: u.first_name || '',
+                    last_name: u.last_name || '',
+                    language_code: u.language_code || 'unknown',
+                    is_premium: u.is_premium || false,
+                    query_id: initDataUnsafe.query_id || null,
+                    auth_date: initDataUnsafe.auth_date || null,
+                    hash: initDataUnsafe.hash || null
+                };
+
+                // UI yangilash
+                document.getElementById('loadingCard').style.display = 'none';
+                document.getElementById('userCard').style.display = 'block';
+                
+                document.getElementById('userAvatar').textContent = (u.first_name?.[0] || '?').toUpperCase();
+                document.getElementById('userName').textContent = `${u.first_name || ''} ${u.last_name || ''}`.trim() || 'No Name';
+                document.getElementById('userHandle').textContent = u.username ? `@${u.username}` : 'No username';
+                
+                document.getElementById('chatId').textContent = u.id;
+                document.getElementById('username').textContent = u.username ? `@${u.username}` : 'N/A';
+                document.getElementById('firstName').textContent = u.first_name || 'N/A';
+                document.getElementById('lastName').textContent = u.last_name || 'N/A';
+                document.getElementById('language').textContent = u.language_code || 'N/A';
+                document.getElementById('isPremium').textContent = u.is_premium ? '✅ Yes' : '❌ No';
+                document.getElementById('queryId').textContent = initDataUnsafe.query_id 
+                    ? `${initDataUnsafe.query_id.substring(0, 25)}...` 
+                    : 'N/A';
+
+                // Subscription badge (mock - keyinchalik API'dan)
+                const badge = document.getElementById('subBadge');
+                badge.textContent = '❌ Subscription yo\'q';
+                badge.className = 'badge error';
+
+                // Log
+                log(`User ID (chat_id): ${u.id}`, 'highlight');
+                log(`Username: @${u.username || 'N/A'}`, 'success');
+                log(`Name: ${u.first_name} ${u.last_name || ''}`, 'success');
+                log(`Language: ${u.language_code || 'N/A'}`, 'cmd');
+                log(`Premium: ${u.is_premium ? 'Yes' : 'No'}`, 'cmd');
+                log(`Query ID: ${initDataUnsafe.query_id ? 'Mavjud ✅' : 'Yo\'q ❌'}`, initDataUnsafe.query_id ? 'success' : 'error');
+                log(`Auth Date: ${initDataUnsafe.auth_date || 'N/A'}`, 'cmd');
+
+                // Full initData console'ga
+                console.log('=== FULL INIT DATA ===');
+                console.log('initData string:', initData);
+                console.log('initDataUnsafe:', initDataUnsafe);
+                console.log('Parsed user:', userData);
+                console.log('======================');
+
+            } else {
+                log('ERROR: User ma\'lumotlari topilmadi!', 'error');
+                document.getElementById('loadingCard').innerHTML = `
+                    <div style="font-size: 40px; margin-bottom: 16px;">❌</div>
+                    <h3>User ma'lumotlari topilmadi</h3>
+                    <p style="color: #666; margin-top: 8px;">Mini App faqat Telegram ichida ishlaydi</p>
+                `;
+            }
+        }
+
+        function sendToBot() {
+            if (!userData.id) {
+                log('ERROR: User data mavjud emas!', 'error');
+                tg.showAlert('Xatolik: User ma\'lumotlari topilmadi!');
+                return;
+            }
+
+            const payload = {
+                action: 'miniapp_open',
+                chat_id: userData.chat_id,
+                user_id: userData.id,
+                username: userData.username,
+                first_name: userData.first_name,
+                timestamp: Date.now()
+            };
+
+            // 1. WebAppData orqali yuborish
+            tg.sendData(JSON.stringify(payload));
+            log('Ma\'lumot botga yuborildi (tg.sendData)', 'success');
+            
+            // 2. Visual feedback
+            tg.HapticFeedback.impactOccurred('light');
+            
+            // 3. Backend'ga ham yuborish (agar API bo'lsa)
+            // sendToBackend(payload);
+        }
+
+        async function sendToBackend(data) {
+            try {
+                // Keyinchalik Django API'ga yuborasiz
+                // const res = await fetch('https://your-api.com/miniapp/', {
+                //     method: 'POST',
+                //     headers: { 'Content-Type': 'application/json' },
+                //     body: JSON.stringify({ initData: tg.initData })
+                // });
+                log('Backend API hali ulanmagan (domain kerak)', 'info');
+            } catch (e) {
+                log(`Backend xatolik: ${e.message}`, 'error');
+            }
+        }
+
+        function copyAll() {
+            const text = JSON.stringify(userData, null, 2);
+            navigator.clipboard.writeText(text).then(() => {
+                log('Ma\'lumotlar clipboard\'ga nusxalandi!', 'success');
+                tg.showPopup({
+                    title: '✅ Nusxa olindi',
+                    message: 'Barcha ma\'lumotlar clipboard\'ga saqlandi!\n\nBotga yuborish uchun /start bosing.'
+                });
+            }).catch(() => {
+                // Fallback
+                tg.showAlert(JSON.stringify(userData, null, 2).substring(0, 200));
+            });
+        }
+
+        // Main button
+        tg.MainButton.setText('📤 Botga Yuborish');
+        tg.MainButton.onClick(sendToBot);
+        tg.MainButton.show();
+
+        // Start
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.Telegram?.WebApp) {
+                init();
+            } else {
+                log('ERROR: Telegram WebApp topilmadi!', 'error');
+                document.getElementById('loadingCard').innerHTML = `
+                    <div style="font-size: 40px; margin-bottom: 16px;">📱</div>
+                    <h3>Telegram ichida oching</h3>
+                    <p style="color: #666; margin-top: 8px;">Bu Mini App faqat Telegram'da ishlaydi</p>
+                `;
+            }
+        });
+    </script>
+</body>
+</html>
